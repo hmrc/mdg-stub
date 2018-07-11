@@ -1,6 +1,6 @@
-# mdg-mock
+# mdg-stub
 
-[![Build Status](https://travis-ci.org/hmrc/mdg-mock.svg)](https://travis-ci.org/hmrc/mdg-mock) [ ![Download](https://api.bintray.com/packages/hmrc/releases/mdg-mock/images/download.svg) ](https://bintray.com/hmrc/releases/mdg-mock/_latestVersion)
+[![Build Status](https://travis-ci.org/hmrc/mdg-stub.svg)](https://travis-ci.org/hmrc/mdg-stub) [ ![Download](https://api.bintray.com/packages/hmrc/releases/mdg-stub/images/download.svg) ](https://bintray.com/hmrc/releases/mdg-stub/_latestVersion)
 
 This is a placeholder README.md for a new repository
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mdgmock.controllers
+package uk.gov.hmrc.mdgstub.controllers
 
 import java.io.ByteArrayInputStream
 
@@ -27,7 +27,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton()
-class MdgMockController extends BaseController {
+class MdgStubController extends BaseController {
 
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
     validXml(request.body) match {
@@ -41,8 +41,9 @@ class MdgMockController extends BaseController {
   private def validXml(body: RawBuffer): Try[Unit] = {
 
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
-    val xsdStream  = new javax.xml.transform.stream.StreamSource(this.getClass.getResourceAsStream("/mdg-schema.xsd"))
-    val schema     = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(xsdStream)
+    val xsdStream =
+      new javax.xml.transform.stream.StreamSource(this.getClass.getResourceAsStream("/mdg-schema.xsd"))
+    val schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(xsdStream)
 
     val factory = javax.xml.parsers.SAXParserFactory.newInstance()
     factory.setNamespaceAware(true)

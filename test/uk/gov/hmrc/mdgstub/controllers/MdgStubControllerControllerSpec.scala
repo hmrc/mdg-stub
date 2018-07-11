@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.mdgmock.controllers
+package uk.gov.hmrc.mdgstub.controllers
 
 import java.io.InputStream
 
@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.duration._
 
-class MdgMockControllerControllerSpec extends UnitSpec with WithFakeApplication {
+class MdgStubControllerControllerSpec extends UnitSpec with WithFakeApplication {
 
   implicit val actorSystem = ActorSystem()
 
@@ -36,7 +36,7 @@ class MdgMockControllerControllerSpec extends UnitSpec with WithFakeApplication 
 
   implicit val timeout: akka.util.Timeout = 10 seconds
 
-  val controller = new MdgMockController()
+  val controller = new MdgStubController()
 
   "POST /request" should {
     "return 204 provided valid XML request" in {
