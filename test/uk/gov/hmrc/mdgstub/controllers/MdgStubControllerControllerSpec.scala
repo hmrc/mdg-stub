@@ -24,11 +24,11 @@ import akka.util.ByteString
 import play.api.http.{HeaderNames, Status}
 import play.api.mvc.RawBuffer
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.duration._
 
-class MdgStubControllerControllerSpec extends UnitSpec with WithFakeApplication {
+class MdgStubControllerControllerSpec extends UnitSpec {
 
   implicit val actorSystem = ActorSystem()
 
