@@ -23,6 +23,7 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
   .settings(scalaSettings ++ scoverageSettings: _*)
   .settings(
+    PlayKeys.playDefaultPort         := 9576,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test(),
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
   )
