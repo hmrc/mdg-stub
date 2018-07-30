@@ -56,6 +56,23 @@ class MdgStubControllerControllerSpec extends UnitSpec {
 
     }
 
+    "return 500 provided valid XML request with simulated failure" in {
+
+      val body = readStream(this.getClass.getResourceAsStream("/validRequestCausingSimulatedFailure.xml"))
+
+      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+
+      val request: FakeRequest[RawBuffer] =
+        FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
+
+      val result = controller.requestTransfer()(request)
+
+      withClue(Helpers.contentAsString(result)) {
+        status(result) shouldBe Status.INTERNAL_SERVER_ERROR
+      }
+
+    }
+
     "return 400 provided request with invalid XML" in {
 
       val body = "invalidXML".getBytes

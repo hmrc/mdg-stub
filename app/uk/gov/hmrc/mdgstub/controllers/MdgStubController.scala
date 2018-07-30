@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.mdgstub.controllers
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, StringReader}
 
 import javax.inject.Singleton
 import org.xml.sax.SAXParseException
@@ -25,20 +25,30 @@ import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import scala.xml._
 
 @Singleton()
 class MdgStubController extends BaseController {
 
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
-    validXml(request.body) match {
+
+    val xml = new String(request.body.asBytes().get.toArray)
+
+    validXml(xml) match {
       case Success(_) =>
-        Future.successful(NoContent)
+        if (checkIfSimulatedFailure(xml)) {
+          Future.successful(InternalServerError("Simulated failure"))
+        } else {
+          Future.successful(NoContent)
+        }
       case Failure(error) =>
         Future.successful(BadRequest(error.getMessage))
     }
   }
 
-  private def validXml(body: RawBuffer): Try[Unit] = {
+
+
+  private def validXml(body: String): Try[Unit] = {
 
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
     val xsdStream =
@@ -62,7 +72,19 @@ class MdgStubController extends BaseController {
 
     }
 
-    Try(xmlLoader.load(new ByteArrayInputStream(body.asBytes().get.toArray)))
+    Try(xmlLoader.load(new StringReader(body)))
+
+  }
+
+  private def checkIfSimulatedFailure(body : String): Boolean = {
+    val parsedXml = scala.xml.XML.loadString(body)
+    val properties = for {
+      property: Node <- parsedXml \ "properties" \ "property"
+      name <- property \ "name"
+      value <- property \ "value"
+    } yield (name.text, value.text)
+
+    properties.contains(("SHOULD_FAIL", "true"))
 
   }
 
