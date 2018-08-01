@@ -12,6 +12,7 @@ The service accepts file transfer a format supported by MDG.
 The service has one endpoint: `http://localhost:9576/mdg-stub/request` which accepts POST requests with file transfers.
 
 The format accepted by MDG is specified as a XML Schema in the following file: [mdg-schema.xml](conf/mdg-schema.xsd).
+
 Sample request document can be found [here](test/resources/validRequest.xml).
 
 In case the request is valid it immediately returns 204. In case the request is invalid it return HTTP 400 error.
@@ -21,7 +22,7 @@ HTTP 500 error is returned.
 ### Mocking errors
 
 The mock allows to simulate errors returned by MDG.
-In order to simulate the error it's necessary to add custom property with key `SHOULD_FAIL` and value `true` to the XML request.
+This can be done by creating a MDG request that in `properties` section contains aproperty with key `SHOULD_FAIL` and value `true` to the XML request.
 [Here](test/resources/validRequestCausingSimulatedFailure.xml) is an example request that triggers an error.
 
 ## Running the service
