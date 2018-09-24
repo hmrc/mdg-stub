@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/hmrc/mdg-stub.svg)](https://travis-ci.org/hmrc/mdg-stub) [ ![Download](https://api.bintray.com/packages/hmrc/releases/mdg-stub/images/download.svg) ](https://bintray.com/hmrc/releases/mdg-stub/_latestVersion)
 
+
 This repository contains stub of the MDG service. It accepts file transfer requests and allows to run and test
 services relying on integration with MDG (e.g. `file-transmission`)
 
