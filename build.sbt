@@ -2,6 +2,7 @@ import TestPhases.oneForkedJvmPerTest
 import scoverage.ScoverageKeys
 import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, scalaSettings}
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "mdg-stub"
 
@@ -20,13 +21,14 @@ lazy val scoverageSettings = {
 }
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
+  .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .settings(scalaSettings ++ scoverageSettings: _*)
   .settings(
     PlayKeys.playDefaultPort         := 9576,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test(),
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
   )
+  .settings(majorVersion := 0)
   .settings(
     publishingSettings: _*
   )
