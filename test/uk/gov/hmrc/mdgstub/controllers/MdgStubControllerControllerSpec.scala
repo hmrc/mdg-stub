@@ -26,6 +26,7 @@ import play.api.mvc.RawBuffer
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class MdgStubControllerControllerSpec extends UnitSpec {
@@ -56,7 +57,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
 
     }
 
-    "return 500 provided valid XML request with simulated failure" in {
+    "return 503 provided valid XML request with simulated failure" in {
 
       val body = readStream(this.getClass.getResourceAsStream("/validRequestCausingSimulatedFailure.xml"))
 
@@ -68,7 +69,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
       val result = controller.requestTransfer()(request)
 
       withClue(Helpers.contentAsString(result)) {
-        status(result) shouldBe Status.INTERNAL_SERVER_ERROR
+        status(result) shouldBe Status.SERVICE_UNAVAILABLE
       }
 
     }

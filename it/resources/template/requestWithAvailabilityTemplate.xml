@@ -34,10 +34,12 @@
             <mdg:name>DOCTYPE</mdg:name>
             <mdg:value>Import Licence</mdg:value>
         </mdg:property>
+
         <mdg:property>
             <mdg:name>AVAILABILITY</mdg:name>
-            <mdg:value>503:0:99999999999</mdg:value>
+            <mdg:value>{STATUS}:{DELAY}:{UNTIL}</mdg:value>
         </mdg:property>
+
     </mdg:properties>
     <mdg:sourceLocation>https://samplemdtp.s3.amazonaws.com/123/evidence.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=...%2F20170727%2Fus-east-1%2Fs3%2Faws4_request&amp;X-Amz-Date=20170727T162258Z&amp;X-Amz-Expires=86400&amp;X-Amz-SignedHeaders=host</mdg:sourceLocation>
     <mdg:sourceFileName>TraderFred.docx</mdg:sourceFileName>

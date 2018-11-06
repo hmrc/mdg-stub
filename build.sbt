@@ -22,12 +22,12 @@ lazy val scoverageSettings = {
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
-  .settings(scalaSettings ++ scoverageSettings: _*)
   .settings(
-    PlayKeys.playDefaultPort         := 9576,
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test(),
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test() ++ AppDependencies.test("it"),
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
   )
+  .settings(PlayKeys.playDefaultPort := 9576)
+  .settings(scalaSettings ++ scoverageSettings: _*)
   .settings(majorVersion := 0)
   .settings(
     publishingSettings: _*
@@ -37,6 +37,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     Keys.fork in IntegrationTest                  := false,
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it")).value,
+    unmanagedResourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it/resources")).value,
     testGrouping in IntegrationTest               := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     parallelExecution in IntegrationTest          := false,
     addTestReportOption(IntegrationTest, "int-test-reports")

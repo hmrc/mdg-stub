@@ -16,43 +16,48 @@
 
 package uk.gov.hmrc.mdgstub.controllers
 
-import java.io.{ByteArrayInputStream, StringReader}
-
-import javax.inject.Singleton
+import java.io.StringReader
+import java.time.Instant
+import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
+import play.api.libs.concurrent.Promise
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import scala.xml._
 
 @Singleton()
-class MdgStubController extends BaseController {
+class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseController {
+
+  private val availabilityMode = raw"(\d{3}):(\d+):(\d+)".r
 
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
 
-    val xml = new String(request.body.asBytes().get.toArray)
+    validateXml(request.body) match {
+      case Success(xml) =>
 
-    validXml(xml) match {
-      case Success(_) =>
-        if (checkIfSimulatedFailure(xml)) {
-          Future.successful(InternalServerError("Simulated failure"))
-        } else {
-          Future.successful(NoContent)
+        withActiveAvailabilityMode(xml) {
+          case Right(Some(AvailabilityMode(status,delay,_))) if (delay.length > 0) => Promise.timeout(Status(status.toInt), delay)
+          case Right(Some(AvailabilityMode(status,_,_)))     => Future.successful((Status(status.toInt)))
+          case Right(None)                                   => Future.successful(NoContent)
+          case Left(error)                                   => Future.successful(BadRequest(error))
         }
+
       case Failure(error) =>
         Future.successful(BadRequest(error.getMessage))
     }
   }
 
-
-
-  private def validXml(body: String): Try[Unit] = {
+  private def validateXml(rawBuffer: RawBuffer): Try[String] = {
 
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
+
     val xsdStream =
       new javax.xml.transform.stream.StreamSource(this.getClass.getResourceAsStream("/mdg-schema.xsd"))
+
     val schema = javax.xml.validation.SchemaFactory.newInstance(schemaLang).newSchema(xsdStream)
 
     val factory = javax.xml.parsers.SAXParserFactory.newInstance()
@@ -60,32 +65,76 @@ class MdgStubController extends BaseController {
     factory.setSchema(schema)
 
     val validatingParser = factory.newSAXParser()
+
     val xmlLoader = new scala.xml.factory.XMLLoader[scala.xml.Elem] {
       override def parser = validatingParser
+
       override def adapter =
         new scala.xml.parsing.NoBindingFactoryAdapter {
-
-          override def error(e: SAXParseException): Unit =
-            throw e
-
+          override def error(e: SAXParseException): Unit = throw e
         }
-
     }
 
-    Try(xmlLoader.load(new StringReader(body)))
-
+    Try {
+      val xml = new String(rawBuffer.asBytes().get.toArray)
+      xmlLoader.load(new StringReader(xml)).toString
+    }
   }
 
-  private def checkIfSimulatedFailure(body : String): Boolean = {
-    val parsedXml = scala.xml.XML.loadString(body)
+  private def withActiveAvailabilityMode(xmlBody: String)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
+    val parsedXml = scala.xml.XML.loadString(xmlBody)
     val properties = for {
       property: Node <- parsedXml \ "properties" \ "property"
       name <- property \ "name"
       value <- property \ "value"
     } yield (name.text, value.text)
 
-    properties.contains(("SHOULD_FAIL", "true"))
+    val availabilityMaybe: Option[(String, String)] = properties.find {
+      case ("AVAILABILITY", _) => true
+      case _                   => false
+    }
 
+    val availabilityModeMaybe = availabilityMaybe.map(_._2)
+
+    block(findActiveAvailabilityMode(availabilityModeMaybe))
   }
 
+  private def findActiveAvailabilityMode(availabilityMaybe: Option[String]): Either[String,Option[AvailabilityMode]] = {
+
+    def tokenToAvailabilityMode(token: String): Either[String, AvailabilityMode] = {
+      token match {
+        case availabilityMode(status, delay, until) => Right(AvailabilityMode(status, delay, until))
+        case _                                      => Left(s"Could not parse token: [${token}].")
+      }
+    }
+
+    // Convert the 'availability mode' String into either a collection of AvailabilityMode instances, or a parse error message.
+    //
+    (for {
+      availability <- availabilityMaybe
+
+      availabilityTokens: Seq[String] = availability.split(";")
+
+      availabilities: Seq[Either[String, AvailabilityMode]] = availabilityTokens.map ( tokenToAvailabilityMode )
+
+      availabilityModesOrParseError = availabilities.foldLeft[Either[String, Seq[AvailabilityMode]]](Right(Seq.empty)) { (seq, either) =>
+        for {
+          ams <- seq.right
+          am <- either.right
+        } yield ams :+ am
+      }
+    } yield {
+      // Find the first Availability where the 'until' field is still in the future.
+      availabilityModesOrParseError.right.map { _.find(av => Instant.now.isBefore(av.until)) }
+    })
+      .getOrElse(Right(None)) // If the AVAILABILITY property wasn't passed in the request.
+  }
+}
+
+final case class AvailabilityMode(status: String, delay: Duration, until: Instant)
+
+object AvailabilityMode {
+  def apply(status: String, delay: String, until: String): AvailabilityMode = {
+    AvailabilityMode(status, delay.toLong seconds, Instant.ofEpochSecond(until.toLong))
+  }
 }
