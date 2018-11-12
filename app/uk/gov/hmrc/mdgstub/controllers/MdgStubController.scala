@@ -18,10 +18,12 @@ package uk.gov.hmrc.mdgstub.controllers
 
 import java.io.StringReader
 import java.time.Instant
+
 import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
 import play.api.libs.concurrent.Promise
 import play.api.mvc._
+import uk.gov.hmrc.mdgstub.util.Eithers
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -89,12 +91,9 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
       value <- property \ "value"
     } yield (name.text, value.text)
 
-    val availabilityMaybe: Option[(String, String)] = properties.find {
-      case ("AVAILABILITY", _) => true
-      case _                   => false
+    val availabilityModeMaybe: Option[String] = properties.collectFirst {
+      case ("AVAILABILITY", mode) => mode
     }
-
-    val availabilityModeMaybe = availabilityMaybe.map(_._2)
 
     block(findActiveAvailabilityMode(availabilityModeMaybe))
   }
@@ -117,12 +116,7 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
 
       availabilities: Seq[Either[String, AvailabilityMode]] = availabilityTokens.map ( tokenToAvailabilityMode )
 
-      availabilityModesOrParseError = availabilities.foldLeft[Either[String, Seq[AvailabilityMode]]](Right(Seq.empty)) { (seq, either) =>
-        for {
-          ams <- seq.right
-          am <- either.right
-        } yield ams :+ am
-      }
+      availabilityModesOrParseError = Eithers.sequence(availabilities)
     } yield {
       // Find the first Availability where the 'until' field is still in the future.
       availabilityModesOrParseError.right.map { _.find(av => Instant.now.isBefore(av.until)) }
