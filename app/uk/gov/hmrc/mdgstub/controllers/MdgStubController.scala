@@ -23,7 +23,7 @@ import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
 import play.api.libs.concurrent.Promise
 import play.api.mvc._
-import uk.gov.hmrc.mdgstub.util.Eithers
+import uk.gov.hmrc.mdgstub.util.{Eithers, PerfLogger}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -85,6 +85,9 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
 
   private def withActiveAvailabilityMode(xmlBody: String)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
     val parsedXml = scala.xml.XML.loadString(xmlBody)
+
+    PerfLogger.debug(s"Received request: [$parsedXml].")
+
     val properties = for {
       property: Node <- parsedXml \ "properties" \ "property"
       name <- property \ "name"
