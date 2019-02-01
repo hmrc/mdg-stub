@@ -21,6 +21,7 @@ import java.time.Instant
 
 import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
+import play.api.Logger
 import play.api.libs.concurrent.Promise
 import play.api.mvc._
 import uk.gov.hmrc.mdgstub.util.{Eithers, PerfLogger}
@@ -39,21 +40,23 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
 
     validateXml(request.body) match {
-      case Success(xml) =>
+      case Right(xmlElem) =>
 
-        withActiveAvailabilityMode(xml) {
+        withActiveAvailabilityMode(xmlElem) {
           case Right(Some(AvailabilityMode(status,delay,_))) if (delay.length > 0) => Promise.timeout(Status(status.toInt), delay)
           case Right(Some(AvailabilityMode(status,_,_)))     => Future.successful((Status(status.toInt)))
           case Right(None)                                   => Future.successful(NoContent)
           case Left(error)                                   => Future.successful(BadRequest(error))
         }
 
-      case Failure(error) =>
-        Future.successful(BadRequest(error.getMessage))
+      case Left((xmlStr, error)) => {
+        Logger.warn(s"Failed to validate xml: [${xmlStr}]. Error was: [${error.getMessage}].")
+        Future.successful(BadRequest(s"Failed to parse xml. Error was: [${error.getMessage}]."))
+      }
     }
   }
 
-  private def validateXml(rawBuffer: RawBuffer): Try[String] = {
+  private def validateXml(rawBuffer: RawBuffer): Either[(String, Throwable),Elem] = {
 
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
@@ -77,19 +80,20 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
         }
     }
 
+    val xmlStr = new String(rawBuffer.asBytes().get.toArray)
+
     Try {
-      val xml = new String(rawBuffer.asBytes().get.toArray)
-      xmlLoader.load(new StringReader(xml)).toString
+      xmlLoader.load(new StringReader(xmlStr))
+    } match {
+      case Success(xml)   => Right(xml)
+      case Failure(error) => Left((xmlStr, error))
     }
   }
 
-  private def withActiveAvailabilityMode(xmlBody: String)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
-    val parsedXml = scala.xml.XML.loadString(xmlBody)
-
-    PerfLogger.debug(s"Received request: [$parsedXml].")
+  private def withActiveAvailabilityMode(xml: Elem)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
 
     val properties = for {
-      property: Node <- parsedXml \ "properties" \ "property"
+      property: Node <- xml \ "properties" \ "property"
       name <- property \ "name"
       value <- property \ "value"
     } yield (name.text, value.text)
