@@ -39,7 +39,11 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
 
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
 
-    validateXml(request.body) match {
+    val xmlStr = new String(request.body.asBytes().get.toArray)
+
+    Logger.info(s"Received request: $xmlStr")
+
+    validateXml(xmlStr) match {
       case Right(xmlElem) =>
 
         withActiveAvailabilityMode(xmlElem) {
@@ -56,7 +60,7 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
     }
   }
 
-  private def validateXml(rawBuffer: RawBuffer): Either[(String, Throwable),Elem] = {
+  private def validateXml(content : String): Either[(String, Throwable),Elem] = {
 
     val schemaLang = javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
@@ -80,13 +84,12 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
         }
     }
 
-    val xmlStr = new String(rawBuffer.asBytes().get.toArray)
 
     Try {
-      xmlLoader.load(new StringReader(xmlStr))
+      xmlLoader.load(new StringReader(content))
     } match {
       case Success(xml)   => Right(xml)
-      case Failure(error) => Left((xmlStr, error))
+      case Failure(error) => Left((content, error))
     }
   }
 
