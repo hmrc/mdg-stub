@@ -95,17 +95,37 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
 
   private def withActiveAvailabilityMode(xml: Elem)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
 
+    val availability = for {
+      fromProperties <- availabilityFromProperties(xml).right
+      fromFilename <- Right(availabilityFromFilename(xml)).right
+    } yield fromFilename orElse fromProperties
+
+    block(availability)
+  }
+
+  private def availabilityFromFilename(xml: Elem) = {
+    val FailureSimulationInFilename = "fail(\\d{3})\\..*".r
+
+    val availabilityFromFilename = (for (
+      FailureSimulationInFilename(httpStatus) <- (xml \ "sourceFileName").map(_.text)
+    ) yield AvailabilityMode(httpStatus, 0 seconds, Instant.MAX)).headOption
+
+    availabilityFromFilename
+  }
+
+  private def availabilityFromProperties(xml: Elem) = {
     val properties = for {
       property: Node <- xml \ "properties" \ "property"
       name <- property \ "name"
       value <- property \ "value"
     } yield (name.text, value.text)
 
-    val availabilityModeMaybe: Option[String] = properties.collectFirst {
+    val rawAvailabilityFromProperties: Option[String] = properties.collectFirst {
       case ("AVAILABILITY", mode) => mode
     }
 
-    block(findActiveAvailabilityMode(availabilityModeMaybe))
+    val availabilityFromProperties = findActiveAvailabilityMode(rawAvailabilityFromProperties)
+    availabilityFromProperties
   }
 
   private def findActiveAvailabilityMode(availabilityMaybe: Option[String]): Either[String,Option[AvailabilityMode]] = {
