@@ -23,8 +23,16 @@ HTTP 500 error is returned.
 ### Mocking errors
 
 The mock allows to simulate errors returned by MDG.
-This can be done by creating a MDG request that in `properties` section contains aproperty with key `SHOULD_FAIL` and value `true` to the XML request.
-[Here](test/resources/validRequestCausingSimulatedFailure.xml) is an example request that triggers an error.
+This can be done in two ways:
+#### Specifying filename with desired error code
+If the request refers to the file with a name that matches the pattern `failXXX.YYY`, where 
+XXX is a desired HTTP status and YYY is any file extension, the stub will immediately return with
+XXX status.
+
+#### Defining more complex failure scenarios by defining custom properties
+TODO 
+MDG stub allows to specify more complex interaction patterns by adding 'AVAILABILITY' properties.
+This needs to be documented
 
 ## Running the service
 

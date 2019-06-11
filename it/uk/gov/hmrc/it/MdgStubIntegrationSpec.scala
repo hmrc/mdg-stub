@@ -97,6 +97,23 @@ class MdgStubIntegrationSpec extends UnitSpec with Matchers with GuiceOneServerP
         status(response) shouldBe SERVICE_UNAVAILABLE
       }
 
+      "return a 503 error without delay based on filename" in {
+        val delay = 0 seconds
+
+        val requestBodyXmlString = Requests.customFilename(filename = "fail503.txt")
+
+        val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
+
+        val startTime = Instant.now
+
+        val response = route(app, request).get
+
+        // Check the 'delay' period of time has elapsed since the request was sent.
+        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, 500 millis)
+
+        status(response) shouldBe SERVICE_UNAVAILABLE
+      }
+
       "return a 503 error delayed 1 second" in {
         val delay = 1 second
 
@@ -138,16 +155,20 @@ class MdgStubIntegrationSpec extends UnitSpec with Matchers with GuiceOneServerP
 
 object Requests {
   def available(delay: Duration, until: Long = Instant.MAX.getEpochSecond) =
-    populateRequest(xmlTemplate, NO_CONTENT, delay, until)
+    populateRequest(xmlTemplate, NO_CONTENT, delay, until, "test.pdf")
+
+  def customFilename(delay: Duration = 0 seconds, until: Long = Instant.MAX.getEpochSecond, filename : String) =
+    populateRequest(xmlTemplate, NO_CONTENT, delay, until, filename)
 
 
   def unavailable(delay: Duration, until: Long = Instant.MAX.getEpochSecond) =
-    populateRequest(xmlTemplate, SERVICE_UNAVAILABLE, delay, until)
+    populateRequest(xmlTemplate, SERVICE_UNAVAILABLE, delay, until, "test.pdf")
 
-  private def populateRequest(template: String, status: Int, delay: Duration, until: Long): String =
+  private def populateRequest(template: String, status: Int, delay: Duration, until: Long, filename : String): String =
     template.replace("{STATUS}", status.toString)
       .replace("{DELAY}",  delay.toSeconds.toString)
       .replace("{UNTIL}",  until.toString)
+      .replace("{FILENAME}",  filename.toString)
 
   lazy val xmlTemplate   = scala.xml.XML.load(this.getClass.getResource("/template/requestWithAvailabilityTemplate.xml")).toString()
   lazy val available = scala.xml.XML.load(this.getClass.getResource("/template/requestWithoutAvailabilityTemplate.xml")).toString()
