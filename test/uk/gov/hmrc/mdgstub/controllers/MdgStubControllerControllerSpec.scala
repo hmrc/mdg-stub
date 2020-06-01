@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,29 +22,29 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import play.api.http.{HeaderNames, Status}
+import play.api.libs.Files.{DefaultTemporaryFileCreator, SingletonTemporaryFileCreator}
 import play.api.mvc.RawBuffer
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MdgStubControllerControllerSpec extends UnitSpec {
+class MdgStubControllerControllerSpec extends UnitSpec with StubControllerComponentsFactory {
 
-  implicit val actorSystem = ActorSystem()
+  private implicit val actorSystem = ActorSystem()
 
-  implicit val materializer = ActorMaterializer()
+  private implicit val materializer = ActorMaterializer()
 
-  implicit val timeout: akka.util.Timeout = 10 seconds
+  private implicit val timeout: akka.util.Timeout = 10 seconds
 
-  val controller = new MdgStubController()
+  private val controller = new MdgStubController(actorSystem, stubControllerComponents())
 
   "POST /request" should {
     "return 204 provided valid XML request" in {
 
       val body = readStream(this.getClass.getResourceAsStream("/validRequest.xml"))
-
-      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+      val rawBody = rawBufferFrom(body)
 
       val request: FakeRequest[RawBuffer] =
         FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
@@ -60,8 +60,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
     "return 503 provided valid XML request with simulated failure" in {
 
       val body = readStream(this.getClass.getResourceAsStream("/validRequestCausingSimulatedFailure.xml"))
-
-      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+      val rawBody = rawBufferFrom(body)
 
       val request: FakeRequest[RawBuffer] =
         FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
@@ -77,8 +76,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
     "return 400 provided request with invalid XML" in {
 
       val body = "invalidXML".getBytes
-
-      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+      val rawBody = rawBufferFrom(body)
 
       val fakeRequest =
         FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
@@ -94,8 +92,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
     "return 400 provided request with valid XML but not matching the schema" in {
 
       val body = readStream(this.getClass.getResourceAsStream("/requestNotCompliantWithSchema.xml"))
-
-      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+      val rawBody = rawBufferFrom(body)
 
       val request: FakeRequest[RawBuffer] =
         FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
@@ -119,7 +116,7 @@ class MdgStubControllerControllerSpec extends UnitSpec {
 
         """.getBytes
 
-      val rawBody = RawBuffer.apply(body.length, ByteString(body))
+      val rawBody = rawBufferFrom(body)
 
       val request: FakeRequest[RawBuffer] =
         FakeRequest("POST", "/").withBody(rawBody).withHeaders((HeaderNames.CONTENT_TYPE, "application/xml"))
@@ -136,4 +133,6 @@ class MdgStubControllerControllerSpec extends UnitSpec {
   private def readStream(stream: InputStream): Array[Byte] =
     Iterator.continually(stream.read).takeWhile(_ != -1).map(_.toByte).toArray
 
+  private def rawBufferFrom(bytes: Array[Byte]): RawBuffer =
+    RawBuffer(bytes.length, SingletonTemporaryFileCreator, ByteString(bytes))
 }
