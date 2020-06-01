@@ -23,11 +23,12 @@ lazy val scoverageSettings = {
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .settings(
-    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test() ++ AppDependencies.test("it"),
+    libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test,
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false)
   )
   .settings(PlayKeys.playDefaultPort := 9576)
   .settings(scalaSettings ++ scoverageSettings: _*)
+  .settings(scalaVersion := "2.12.10")
   .settings(majorVersion := 0)
   .settings(
     publishingSettings: _*

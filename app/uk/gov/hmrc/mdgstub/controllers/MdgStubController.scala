@@ -25,7 +25,7 @@ import org.xml.sax.SAXParseException
 import play.api.Logger
 import play.api.mvc._
 import uk.gov.hmrc.mdgstub.util.Eithers
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -33,8 +33,10 @@ import scala.util.{Failure, Success, Try}
 import scala.xml._
 
 @Singleton()
-class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerComponents)(implicit ec: ExecutionContext) extends BackendController(cc) {
+class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerComponents)
+                                  (implicit ec: ExecutionContext) extends BackendController(cc) {
 
+  private val logger = Logger(this.getClass)
   private val availabilityMode = raw"(\d{3}):(\d+):(\d+)".r
 
   // Use akka.pattern.after(duration, actorSystem.scheduler)(Future(message)) instead
@@ -42,11 +44,10 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
 
     val xmlStr = new String(request.body.asBytes().get.toArray)
 
-    Logger.info(s"Received request: $xmlStr")
+    logger.info(s"Received request: $xmlStr")
 
     validateXml(xmlStr) match {
       case Right(xmlElem) =>
-
         withActiveAvailabilityMode(xmlElem) {
           case Right(Some(AvailabilityMode(status, delay, _))) if (delay.length > 0) => after(delay, Future.successful(Status(status.toInt)))
           case Right(Some(AvailabilityMode(status, _, _)))     => Future.successful(Status(status.toInt))
@@ -54,10 +55,9 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
           case Left(error)                                     => Future.successful(BadRequest(error))
         }
 
-      case Left((xmlStr, error)) => {
-        Logger.warn(s"Failed to validate xml: [${xmlStr}]. Error was: [${error.getMessage}].")
+      case Left((xmlStr, error)) =>
+        logger.warn(s"Failed to validate xml: [${xmlStr}]. Error was: [${error.getMessage}].")
         Future.successful(BadRequest(s"Failed to parse xml. Error was: [${error.getMessage}]."))
-      }
     }
   }
 

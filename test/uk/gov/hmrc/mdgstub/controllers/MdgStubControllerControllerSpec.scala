@@ -21,16 +21,18 @@ import java.io.InputStream
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import org.scalatest.matchers.should
+import org.scalatest.wordspec.AnyWordSpecLike
 import play.api.http.{HeaderNames, Status}
-import play.api.libs.Files.{DefaultTemporaryFileCreator, SingletonTemporaryFileCreator}
+import play.api.libs.Files.SingletonTemporaryFileCreator
 import play.api.mvc.RawBuffer
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory}
-import uk.gov.hmrc.play.test.UnitSpec
+import play.api.test.Helpers.status
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MdgStubControllerControllerSpec extends UnitSpec with StubControllerComponentsFactory {
+class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matchers with StubControllerComponentsFactory {
 
   private implicit val actorSystem = ActorSystem()
 
