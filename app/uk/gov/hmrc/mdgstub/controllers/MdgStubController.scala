@@ -39,7 +39,6 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
   private val logger = Logger(this.getClass)
   private val availabilityMode = raw"(\d{3}):(\d+):(\d+)".r
 
-  // Use akka.pattern.after(duration, actorSystem.scheduler)(Future(message)) instead
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
 
     val xmlStr = new String(request.body.asBytes().get.toArray)
