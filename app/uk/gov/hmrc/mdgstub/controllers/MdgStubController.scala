@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package uk.gov.hmrc.mdgstub.controllers
 import java.io.StringReader
 import java.time.Instant
 
+import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
 import play.api.Logger
-import play.api.libs.concurrent.Promise
 import play.api.mvc._
-import uk.gov.hmrc.mdgstub.util.{Eithers, PerfLogger}
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.mdgstub.util.Eithers
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -33,32 +33,35 @@ import scala.util.{Failure, Success, Try}
 import scala.xml._
 
 @Singleton()
-class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseController {
+class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerComponents)
+                                  (implicit ec: ExecutionContext) extends BackendController(cc) {
 
+  private val logger = Logger(this.getClass)
   private val availabilityMode = raw"(\d{3}):(\d+):(\d+)".r
 
   def requestTransfer() = Action.async(parse.raw) { implicit request =>
 
     val xmlStr = new String(request.body.asBytes().get.toArray)
 
-    Logger.info(s"Received request: $xmlStr")
+    logger.info(s"Received request: $xmlStr")
 
     validateXml(xmlStr) match {
       case Right(xmlElem) =>
-
         withActiveAvailabilityMode(xmlElem) {
-          case Right(Some(AvailabilityMode(status,delay,_))) if (delay.length > 0) => Promise.timeout(Status(status.toInt), delay)
-          case Right(Some(AvailabilityMode(status,_,_)))     => Future.successful((Status(status.toInt)))
-          case Right(None)                                   => Future.successful(NoContent)
-          case Left(error)                                   => Future.successful(BadRequest(error))
+          case Right(Some(AvailabilityMode(status, delay, _))) if (delay.length > 0) => after(delay, Future.successful(Status(status.toInt)))
+          case Right(Some(AvailabilityMode(status, _, _)))     => Future.successful(Status(status.toInt))
+          case Right(None)                                     => Future.successful(NoContent)
+          case Left(error)                                     => Future.successful(BadRequest(error))
         }
 
-      case Left((xmlStr, error)) => {
-        Logger.warn(s"Failed to validate xml: [${xmlStr}]. Error was: [${error.getMessage}].")
+      case Left((xmlStr, error)) =>
+        logger.warn(s"Failed to validate xml: [${xmlStr}]. Error was: [${error.getMessage}].")
         Future.successful(BadRequest(s"Failed to parse xml. Error was: [${error.getMessage}]."))
-      }
     }
   }
+
+  private def after[A](delay: FiniteDuration, future: Future[A]): Future[A] =
+    akka.pattern.after(delay, actorSystem.scheduler)(future)
 
   private def validateXml(content : String): Either[(String, Throwable),Elem] = {
 
@@ -83,7 +86,6 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
           override def error(e: SAXParseException): Unit = throw e
         }
     }
-
 
     Try {
       xmlLoader.load(new StringReader(content))
@@ -155,7 +157,7 @@ class MdgStubController @Inject() (implicit ec: ExecutionContext) extends BaseCo
   }
 }
 
-final case class AvailabilityMode(status: String, delay: Duration, until: Instant)
+final case class AvailabilityMode(status: String, delay: FiniteDuration, until: Instant)
 
 object AvailabilityMode {
   def apply(status: String, delay: String, until: String): AvailabilityMode = {

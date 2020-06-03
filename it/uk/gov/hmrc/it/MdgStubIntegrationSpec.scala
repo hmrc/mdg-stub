@@ -16,17 +16,18 @@
 package uk.gov.hmrc.it
 
 import java.time.Instant
-import org.scalatest.Matchers
+
+import org.scalatest.matchers.should
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MdgStubIntegrationSpec extends UnitSpec with Matchers with GuiceOneServerPerSuite {
+class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with GuiceOneServerPerSuite {
   "MDG Stub" when {
     "available" should {
       "return successful response without delay" in {
@@ -98,8 +99,6 @@ class MdgStubIntegrationSpec extends UnitSpec with Matchers with GuiceOneServerP
       }
 
       "return a 503 error without delay based on filename" in {
-        val delay = 0 seconds
-
         val requestBodyXmlString = Requests.customFilename(filename = "fail503.txt")
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))

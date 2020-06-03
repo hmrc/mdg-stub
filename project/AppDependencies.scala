@@ -6,16 +6,15 @@ object AppDependencies {
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc" %% "bootstrap-play-25" % "4.9.0",
-    "org.scala-lang.modules" %% "scala-xml"         % "1.1.0"
+    "uk.gov.hmrc"            %% "bootstrap-backend-play-27" % "2.14.0",
+    "org.scala-lang.modules" %% "scala-xml"                 % "1.3.0"
   )
 
-  def test(scope: String = "test") = Seq(
-    "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % scope,
-    "org.scalatest" %% "scalatest" % "3.0.5" % scope,
-    "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
-    "org.pegdown" % "pegdown" % "1.6.0" % scope,
-
-    "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+  val test = Seq(
+    "org.scalatest"          %% "scalatest"          % "3.1.1"             % s"$Test,$IntegrationTest",
+    "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3"             % s"$Test,$IntegrationTest",
+    "com.vladsch.flexmark"    % "flexmark-all"       % "0.35.10"           % s"$Test,$IntegrationTest",
+    "com.typesafe.play"      %% "play-test"          % PlayVersion.current % s"$Test,$IntegrationTest"
   )
+
 }
