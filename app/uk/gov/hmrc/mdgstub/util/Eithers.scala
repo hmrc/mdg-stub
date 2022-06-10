@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ final object Eithers {
 
     xs.foldLeft[Either[L, Seq[R]]](zero) { (seq, either) =>
       for {
-        ams <- seq.right
-        am  <- either.right
+        ams <- seq
+        am  <- either
       } yield ams :+ am
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package uk.gov.hmrc.mdgstub.controllers
 import java.io.InputStream
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -31,12 +30,11 @@ import play.api.test.Helpers.status
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matchers with StubControllerComponentsFactory {
 
   private implicit val actorSystem = ActorSystem()
-
-  private implicit val materializer = ActorMaterializer()
 
   private implicit val timeout: akka.util.Timeout = 10 seconds
 

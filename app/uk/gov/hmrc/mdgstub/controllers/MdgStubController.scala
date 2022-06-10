@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+import scala.language.postfixOps
 import scala.xml._
 
 @Singleton()
@@ -98,8 +99,8 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
   private def withActiveAvailabilityMode(xml: Elem)(block: Either[String,Option[AvailabilityMode]] => Future[Result]): Future[Result] = {
 
     val availability = for {
-      fromProperties <- availabilityFromProperties(xml).right
-      fromFilename <- Right(availabilityFromFilename(xml)).right
+      fromProperties <- availabilityFromProperties(xml)
+      fromFilename <- Right(availabilityFromFilename(xml))
     } yield fromFilename orElse fromProperties
 
     block(availability)
@@ -144,14 +145,14 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
     (for {
       availability <- availabilityMaybe
 
-      availabilityTokens: Seq[String] = availability.split(";")
+      availabilityTokens: Seq[String] = availability.split(";").toSeq
 
       availabilities: Seq[Either[String, AvailabilityMode]] = availabilityTokens.map ( tokenToAvailabilityMode )
 
       availabilityModesOrParseError = Eithers.sequence(availabilities)
     } yield {
       // Find the first Availability where the 'until' field is still in the future.
-      availabilityModesOrParseError.right.map { _.find(av => Instant.now.isBefore(av.until)) }
+      availabilityModesOrParseError.map { _.find(av => Instant.now.isBefore(av.until)) }
     })
       .getOrElse(Right(None)) // If the AVAILABILITY property wasn't passed in the request.
   }
