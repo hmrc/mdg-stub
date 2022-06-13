@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uk.gov.hmrc.it
 
 import java.time.Instant
@@ -26,12 +27,13 @@ import play.api.test.Helpers._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with GuiceOneServerPerSuite {
   "MDG Stub" when {
     "available" should {
       "return successful response without delay" in {
-        val delay = 0 seconds
+        val delay = 0.seconds
 
         val requestBodyXmlString = Requests.available(delay)
 
