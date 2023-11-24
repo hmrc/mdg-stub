@@ -18,8 +18,8 @@ package uk.gov.hmrc.mdgstub.controllers
 
 import java.io.InputStream
 
-import akka.actor.ActorSystem
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.util.ByteString
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpecLike
 import play.api.http.{HeaderNames, Status}
@@ -36,7 +36,7 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
 
   private implicit val actorSystem = ActorSystem()
 
-  private implicit val timeout: akka.util.Timeout = 10 seconds
+  private implicit val timeout: org.apache.pekko.util.Timeout = 10 seconds
 
   private val controller = new MdgStubController(actorSystem, stubControllerComponents())
 

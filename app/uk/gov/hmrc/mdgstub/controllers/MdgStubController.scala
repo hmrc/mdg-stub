@@ -19,7 +19,7 @@ package uk.gov.hmrc.mdgstub.controllers
 import java.io.StringReader
 import java.time.Instant
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import org.xml.sax.SAXParseException
 import play.api.Logger
@@ -62,7 +62,7 @@ class MdgStubController @Inject() (actorSystem: ActorSystem, cc: ControllerCompo
   }
 
   private def after[A](delay: FiniteDuration, future: Future[A]): Future[A] =
-    akka.pattern.after(delay, actorSystem.scheduler)(future)
+    org.apache.pekko.pattern.after(delay, actorSystem.scheduler)(future)
 
   private def validateXml(content : String): Either[(String, Throwable),Elem] = {
 
