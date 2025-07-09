@@ -16,33 +16,33 @@
 
 package uk.gov.hmrc.mdgstub.controllers
 
-import java.io.InputStream
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.util.ByteString
-import org.scalatest.matchers.should
-import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.{HeaderNames, Status}
 import play.api.libs.Files.SingletonTemporaryFileCreator
 import play.api.mvc.RawBuffer
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory}
 import play.api.test.Helpers.status
 
+import java.io.InputStream
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.language.postfixOps
+import scala.concurrent.duration.DurationInt
 
-class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matchers with StubControllerComponentsFactory {
+class MdgStubControllerControllerSpec
+  extends AnyWordSpec
+     with Matchers
+     with StubControllerComponentsFactory {
 
-  private implicit val actorSystem = ActorSystem()
+  private given actorSystem: ActorSystem = ActorSystem()
 
-  private implicit val timeout: org.apache.pekko.util.Timeout = 10 seconds
+  private given timeout: org.apache.pekko.util.Timeout = 10.seconds
 
   private val controller = new MdgStubController(actorSystem, stubControllerComponents())
 
   "POST /request" should {
     "return 204 provided valid XML request" in {
-
       val body = readStream(this.getClass.getResourceAsStream("/validRequest.xml"))
       val rawBody = rawBufferFrom(body)
 
@@ -54,11 +54,9 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
       withClue(Helpers.contentAsString(result)) {
         status(result) shouldBe Status.NO_CONTENT
       }
-
     }
 
     "return 503 provided valid XML request with simulated failure" in {
-
       val body = readStream(this.getClass.getResourceAsStream("/validRequestCausingSimulatedFailure.xml"))
       val rawBody = rawBufferFrom(body)
 
@@ -70,11 +68,9 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
       withClue(Helpers.contentAsString(result)) {
         status(result) shouldBe Status.SERVICE_UNAVAILABLE
       }
-
     }
 
     "return 400 provided request with invalid XML" in {
-
       val body = "invalidXML".getBytes
       val rawBody = rawBufferFrom(body)
 
@@ -86,11 +82,9 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
       withClue(Helpers.contentAsString(result)) {
         status(result) shouldBe Status.BAD_REQUEST
       }
-
     }
 
     "return 400 provided request with valid XML but not matching the schema" in {
-
       val body = readStream(this.getClass.getResourceAsStream("/requestNotCompliantWithSchema.xml"))
       val rawBody = rawBufferFrom(body)
 
@@ -102,11 +96,9 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
       withClue(Helpers.contentAsString(result)) {
         status(result) shouldBe Status.BAD_REQUEST
       }
-
     }
 
     "return 400 provided request with valid XML but with other schema" in {
-
       val body =
         """
           <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"
@@ -126,7 +118,6 @@ class MdgStubControllerControllerSpec extends AnyWordSpecLike with should.Matche
       withClue(Helpers.contentAsString(result)) {
         status(result) shouldBe Status.BAD_REQUEST
       }
-
     }
   }
 

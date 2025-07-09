@@ -16,20 +16,22 @@
 
 package uk.gov.hmrc.it
 
-import java.time.Instant
-
-import org.scalatest.matchers.should
-import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
+import java.time.Instant
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.language.postfixOps
+import scala.concurrent.duration.{Duration, DurationInt}
 
-class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with GuiceOneServerPerSuite {
+class MdgStubIntegrationSpec
+  extends AnyWordSpec
+     with Matchers
+     with GuiceOneServerPerSuite {
+
   "MDG Stub" when {
     "available" should {
       "return successful response without delay" in {
@@ -39,29 +41,29 @@ class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with G
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, delay.plus(500 millis))
+        Await.result(response map { _ => Instant.now() should be < startTime.plusMillis(1000) }, delay.plus(500.millis))
 
         status(response) shouldBe NO_CONTENT
       }
 
       "return successful response delayed 1 second" in {
-        val delay = 1 second
+        val delay = 1.second
 
         val requestBodyXmlString = Requests.available(delay)
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be > startTime.plusMillis(delay toMillis) }, delay.plus(500 millis))
+        Await.result(response map { _ => Instant.now() should be > startTime.plusMillis(delay.toMillis) }, delay.plus(500.millis))
 
         status(response) shouldBe NO_CONTENT
       }
@@ -71,12 +73,12 @@ class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with G
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, 500 millis)
+        Await.result(response map { _ => Instant.now() should be < startTime.plusMillis(1000) }, 500.millis)
 
         status(response) shouldBe NO_CONTENT
       }
@@ -84,18 +86,18 @@ class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with G
 
     "unavailable" should {
       "return a 503 error without delay" in {
-        val delay = 0 seconds
+        val delay = 0.seconds
 
         val requestBodyXmlString = Requests.unavailable(delay)
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, 500 millis)
+        Await.result(response map { _ => Instant.now() should be < startTime.plusMillis(1000) }, 500.millis)
 
         status(response) shouldBe SERVICE_UNAVAILABLE
       }
@@ -105,29 +107,29 @@ class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with G
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, 500 millis)
+        Await.result(response map { _ => Instant.now() should be < startTime.plusMillis(1000) }, 500.millis)
 
         status(response) shouldBe SERVICE_UNAVAILABLE
       }
 
       "return a 503 error delayed 1 second" in {
-        val delay = 1 second
+        val delay = 1.second
 
         val requestBodyXmlString = Requests.unavailable(delay)
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be > startTime.plusMillis(delay toMillis) }, delay.plus(500 millis))
+        Await.result(response map { _ => Instant.now() should be > startTime.plusMillis(delay.toMillis) }, delay.plus(500.millis))
 
         status(response) shouldBe SERVICE_UNAVAILABLE
       }
@@ -135,18 +137,18 @@ class MdgStubIntegrationSpec extends AnyWordSpecLike with should.Matchers with G
 
     "sent a request containing an invalidly formatted AVAILABILITY property" should {
       "return 400" in {
-        val delay = 0 seconds
+        val delay = 0.seconds
 
         val requestBodyXmlString = Requests.invalid
 
         val request = FakeRequest(POST, "/mdg-stub/request").withBody(requestBodyXmlString).withHeaders((CONTENT_TYPE, XML))
 
-        val startTime = Instant.now
+        val startTime = Instant.now()
 
         val response = route(app, request).get
 
         // Check the 'delay' period of time has elapsed since the request was sent.
-        Await.result(response map { _ => Instant.now should be < startTime.plusMillis(1000) }, delay.plus(500 millis))
+        Await.result(response map { _ => Instant.now() should be < startTime.plusMillis(1000) }, delay.plus(500.millis))
 
         status(response) shouldBe BAD_REQUEST
       }
@@ -158,7 +160,7 @@ object Requests {
   def available(delay: Duration, until: Long = Instant.MAX.getEpochSecond) =
     populateRequest(xmlTemplate, NO_CONTENT, delay, until, "test.pdf")
 
-  def customFilename(delay: Duration = 0 seconds, until: Long = Instant.MAX.getEpochSecond, filename : String) =
+  def customFilename(delay: Duration = 0.seconds, until: Long = Instant.MAX.getEpochSecond, filename : String) =
     populateRequest(xmlTemplate, NO_CONTENT, delay, until, filename)
 
 
@@ -166,12 +168,13 @@ object Requests {
     populateRequest(xmlTemplate, SERVICE_UNAVAILABLE, delay, until, "test.pdf")
 
   private def populateRequest(template: String, status: Int, delay: Duration, until: Long, filename : String): String =
-    template.replace("{STATUS}", status.toString)
-      .replace("{DELAY}",  delay.toSeconds.toString)
-      .replace("{UNTIL}",  until.toString)
+    template
+      .replace("{STATUS}"  , status.toString)
+      .replace("{DELAY}"   ,  delay.toSeconds.toString)
+      .replace("{UNTIL}"   ,  until.toString)
       .replace("{FILENAME}",  filename.toString)
 
-  lazy val xmlTemplate   = scala.xml.XML.load(this.getClass.getResource("/template/requestWithAvailabilityTemplate.xml")).toString()
-  lazy val available = scala.xml.XML.load(this.getClass.getResource("/template/requestWithoutAvailabilityTemplate.xml")).toString()
-  lazy val invalid = xmlTemplate.replace("{STATUS}","NO_CONTENT").replace("{DELAY}","1").replace("{UNTIL}", "BAD_VALUE")
+  lazy val xmlTemplate = scala.xml.XML.load(this.getClass.getResource("/template/requestWithAvailabilityTemplate.xml")).toString()
+  lazy val available   = scala.xml.XML.load(this.getClass.getResource("/template/requestWithoutAvailabilityTemplate.xml")).toString()
+  lazy val invalid     = xmlTemplate.replace("{STATUS}","NO_CONTENT").replace("{DELAY}","1").replace("{UNTIL}", "BAD_VALUE")
 }
