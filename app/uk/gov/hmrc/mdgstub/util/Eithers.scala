@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.mdgstub.util
 
-final object Eithers {
+object Eithers {
 
   def sequence[L,R](xs: Seq[Either[L,R]]): Either[L,Seq[R]] = {
     val zero = Right(Seq.empty)
 
     xs.foldLeft[Either[L, Seq[R]]](zero) { (seq, either) =>
-      for {
+      for
         ams <- seq
         am  <- either
-      } yield ams :+ am
+      yield ams :+ am
     }
   }
 }
